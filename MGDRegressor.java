@@ -1,5 +1,5 @@
 package javaml;
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import static java.lang.Math.pow;
 
@@ -16,11 +16,6 @@ public class MGDRegressor
         this.learning_rate = learning_rate;
         this.weights = null;
         this.intercept = null;
-    }
-
-    public MGDRegressor()
-    {
-
     }
 
     public void train(double[][] X_train, double[] y_train )
@@ -56,12 +51,12 @@ public class MGDRegressor
                     weights_gradient[k] += error * data_point[k];
                 }
 
-            this.intercept = this.intercept - (this.learning_rate * ((double) 2 /num_data_points) * intercept_gradient);
+                this.intercept = this.intercept - (this.learning_rate * ((double) 2 /num_data_points) * intercept_gradient);
 
-            for (int l = 0; l < num_features; l++)
-            {
-                this.weights[l] = this.weights[l] - (this.learning_rate * ((double) 2 /num_data_points) * weights_gradient[l]);
-            }
+                for (int l = 0; l < num_features; l++)
+                {
+                    this.weights[l] = this.weights[l] - (this.learning_rate * ((double) 2 /num_data_points) * weights_gradient[l]);
+                }
 
             }
         }
@@ -128,41 +123,46 @@ public class MGDRegressor
 
     public static double r2_score(double[] y_test, double[] y_pred)
     {
-       double sum_y_test = 0;
-       for(int i = 0; i< y_test.length; i++)
-       {
-           sum_y_test += y_test[i];
-       }
+        double sum_y_test = 0;
+        for(int i = 0; i< y_test.length; i++)
+        {
+            sum_y_test += y_test[i];
+        }
 
-       double mean_y_test = sum_y_test/y_test.length;
-       double total_sum_squares = 0.0;
+        double total_sum_squares = getTotalSumSquares(y_test, y_pred, sum_y_test);
 
-       for(double y_i : y_test)
-       {
-           total_sum_squares += Math.pow(y_i - mean_y_test,2);
-       }
+        double sum_squared_residuals = 0.0;
+        for (int i = 0; i<y_test.length;i++)
+        {
+            sum_squared_residuals += Math.pow(y_test[i] - y_pred[i],2);
+        }
 
-       if(total_sum_squares == 0)
-       {
-           for (int i = 0; i<y_test.length;i++)
-           {
-               if(y_test[i] == y_pred[i])
-               {
-                   total_sum_squares =  1.0;
-               }
-               total_sum_squares =  0.0;
-           }
-       }
+        double r2 = 1 - (sum_squared_residuals/total_sum_squares);
 
-       double sum_squared_residuals = 0.0;
-       for (int i = 0; i<y_test.length;i++)
-       {
-           sum_squared_residuals += Math.pow(y_test[i] - y_pred[i],2);
-       }
+        return r2;
+    }
 
-       double r2 = 1 - (sum_squared_residuals/total_sum_squares);
+    private static double getTotalSumSquares(double[] y_test, double[] y_pred, double sum_y_test) {
+        double mean_y_test = sum_y_test / y_test.length;
+        double total_sum_squares = 0.0;
 
-       return r2;
+        for(double y_i : y_test)
+        {
+            total_sum_squares += Math.pow(y_i - mean_y_test,2);
+        }
+
+        if(total_sum_squares == 0)
+        {
+            for (int i = 0; i< y_test.length; i++)
+            {
+                if(y_test[i] == y_pred[i])
+                {
+                    total_sum_squares =  1.0;
+                }
+                total_sum_squares =  0.0;
+            }
+        }
+        return total_sum_squares;
     }
 
     public static double adjusted_r2(double[] y_test, double[] y_pred, int num_features)
@@ -171,43 +171,20 @@ public class MGDRegressor
         int n = y_test.length;
 
         double adj_r2 = (1-r2)*(n-1)/(n - num_features - 1);
+        if(Double.isNaN(adj_r2))
+        {
+            return Double.MAX_VALUE;
+        }
         return adj_r2;
     }
 
-    /*private double predictSingle(double[] dataPoint) {
-        double prediction = this.intercept;
-        for (int i = 0; i < this.weights.length; i++) {
-            prediction += this.weights[i] * dataPoint[i];
-        }
-        return prediction;
-    }*/
-
-    /*public double evaluate(double[][] X_val, double[] y_val) {
-
-        if (this.weights == null) {
-            throw new IllegalStateException("Model has not been trained yet. Cannot evaluate.");
-        }
-
-        int numValSamples = X_val.length;
-        double sumOfSquaredErrors = 0.0;
-
-        for (int i = 0; i < numValSamples; i++) {
-            // Make a prediction for the current validation data point
-            double prediction = predictSingle(X_val[i]);
-
-            // Get the true value
-            double trueValue = y_val[i];
-
-            // Calculate the squared error and add it to the sum
-            double error = prediction - trueValue;
-            sumOfSquaredErrors += error * error;
-        }
-
-        // Return the average of the squared errors
-        return sumOfSquaredErrors / numValSamples;
-    }*/
-
-    public String getParams() {
+    public String getParams()
+    {
         return "LR=" + this.learning_rate + ", Epochs=" + this.epochs;
+    }
+
+    public int getEpochs()
+    {
+        return epochs;
     }
 }
