@@ -1,0 +1,2362 @@
+Index: src/main/java/com/tunerapp/mlmodels/MGDRegressor.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/mlmodels/MGDRegressor.java b/src/main/java/com/tunerapp/mlmodels/MGDRegressor.java
+new file mode 100644
+--- /dev/null	(date 1766280458693)
++++ b/src/main/java/com/tunerapp/mlmodels/MGDRegressor.java	(date 1766280458693)
+@@ -0,0 +1,244 @@
++package main.java.com.tunerapp.mlmodels;
++
++import java.util.Arrays;
++import static java.lang.Math.pow;
++
++public class MGDRegressor
++{
++    int epochs;
++    double learning_rate;
++    double[] weights;
++    Double intercept;
++
++    public MGDRegressor(int epochs, double learning_rate)
++    {
++        this.epochs = epochs;
++        this.learning_rate = learning_rate;
++        this.weights = null;
++        this.intercept = null;
++    }
++
++    public void train(double[][] X_train, double[] y_train )
++    {
++        int num_features = X_train[0].length;
++        int num_data_points = X_train.length;
++
++        this.weights = new double[num_features];
++        this.intercept = 0.0;
++
++        for (int i = 0; i < this.epochs; i++)
++        {
++            double[] weights_gradient = new double[num_features];
++            double intercept_gradient = 0.0;
++
++            for(int j = 0; j < num_data_points; j++)
++            {
++                double[] data_point = X_train[j];
++                double target = y_train[j];
++                double y_pred = 0.0;
++
++                for (int k = 0; k < num_features; k++)
++                {
++                    y_pred += this.weights[k] * data_point[k];
++                }
++
++                y_pred += this.intercept;
++                double error = y_pred - target;
++                intercept_gradient += error;
++
++                for(int k = 0; k < num_features; k++)
++                {
++                    weights_gradient[k] += error * data_point[k];
++                }
++
++                this.intercept = this.intercept - (this.learning_rate * ((double) 2 /num_data_points) * intercept_gradient);
++
++                for (int l = 0; l < num_features; l++)
++                {
++                    this.weights[l] = this.weights[l] - (this.learning_rate * ((double) 2 /num_data_points) * weights_gradient[l]);
++                }
++
++            }
++        }
++    }
++
++    public double[] predict(double[][] X_test)
++    {
++        double[] predictions = new double[X_test.length];
++        int num_test_samples = X_test.length;
++        int num_features = X_test[0].length;
++        predictions = Arrays.copyOf(predictions, predictions.length + 1);
++
++
++        for (int i = 0; i < num_test_samples; i++)
++        {
++            double[] data_point = X_test[i];
++            double prediction = 0.0;
++
++            for (int j = 0; j < num_features; j++)
++            {
++                prediction += this.weights[j] * data_point[j];
++            }
++
++            prediction += this.intercept;
++
++            predictions[i] = prediction;
++        }
++
++        return predictions;
++
++    }
++
++    public static double mse(double[] y_test,double[] y_pred)
++    {
++        double sum_squared_errors = 0.0;
++        double mse = 0;
++
++        for(int i = 0; i < y_pred.length - 1; i++)
++        {
++            double error = y_test[i] - y_pred[i];
++            sum_squared_errors += pow(error,2);
++        }
++
++        mse = sum_squared_errors/y_test.length;
++
++        if(Double.isNaN(mse))
++        {
++            return Double.MAX_VALUE;
++        }
++
++        return  mse;
++    }
++
++    public static double rmse(double[] y_test,double[] y_pred)
++    {
++        double mse = MGDRegressor.mse(y_test,y_pred);
++
++        return Math.sqrt(mse);
++    }
++
++    public static double mae(double[] y_test,double[] y_pred)
++    {
++        double sum_absolute_error = 0.0;
++        double mae = 0;
++        for(int i = 0; i < y_test.length; i++)
++        {
++            double error = y_test[i] - y_pred[i];
++            sum_absolute_error += Math.abs(error);
++        }
++
++        mae = sum_absolute_error/y_test.length;
++
++        if(Double.isNaN(mae))
++        {
++            return Double.MAX_VALUE;
++        }
++
++        return mae;
++    }
++
++    public static double r2_score(double[] y_test, double[] y_pred)
++    {
++        /*double sum_y_test = 0;
++        for(int i = 0; i< y_test.length; i++)
++        {
++            sum_y_test += y_test[i];
++        }
++
++        double total_sum_squares = getTotalSumSquares(y_test, y_pred, sum_y_test);
++
++        double sum_squared_residuals = 0.0;
++        for (int i = 0; i<y_test.length;i++)
++        {
++            sum_squared_residuals += Math.pow(y_test[i] - y_pred[i],2);
++        }
++
++        double r2 = 1 - (sum_squared_residuals/total_sum_squares);
++
++        return r2;*/
++
++        double sum_y_test = 0.0;
++        for (double y : y_test) {
++            sum_y_test += y;
++        }
++
++        double mean_y_test = sum_y_test / y_test.length;
++
++        // Compute total sum of squares (TSS)
++        double total_sum_squares = 0.0;
++        for (double y : y_test) {
++            total_sum_squares += Math.pow(y - mean_y_test, 2);
++        }
++
++        // Compute residual sum of squares (RSS)
++        double sum_squared_residuals = 0.0;
++        for (int i = 0; i < y_test.length; i++) {
++            sum_squared_residuals += Math.pow(y_test[i] - y_pred[i], 2);
++        }
++
++        if (total_sum_squares == 0) {
++            for (int i = 0; i < y_test.length; i++) {
++                if (y_test[i] != y_pred[i]) {
++                    return 0.0;
++                }
++            }
++            return 1.0;
++        }
++
++        return 1 - (sum_squared_residuals / total_sum_squares);
++
++    }
++
++    /*private static double getTotalSumSquares(double[] y_test, double[] y_pred, double sum_y_test) {
++        double mean_y_test = sum_y_test / y_test.length;
++        double total_sum_squares = 0.0;
++
++        for(double y_i : y_test)
++        {
++            total_sum_squares += Math.pow(y_i - mean_y_test,2);
++        }
++
++        if(total_sum_squares == 0)
++        {
++            for (int i = 0; i< y_test.length; i++)
++            {
++                if(y_test[i] == y_pred[i])
++                {
++                    total_sum_squares =  0.0;
++                }
++                total_sum_squares =  1.0;
++            }
++        }
++        return total_sum_squares;
++    }*/
++
++    public static double adjusted_r2(double[] y_test, double[] y_pred, int num_features)
++    {
++        double r2 = MGDRegressor.r2_score(y_test,y_pred);
++        int n = y_test.length;
++
++
++        if (n - num_features - 1 <= 0) {
++
++            return Double.NaN;
++        }
++
++        double adj_r2 = 1 - (1 - r2) * ((n - 1.0) / (n - num_features - 1.0));
++
++        if(Double.isNaN(adj_r2))
++        {
++            return Double.MAX_VALUE;
++        }
++        return adj_r2;
++    }
++
++    public String getParams()
++    {
++        return "LR=" + this.learning_rate + ", Epochs=" + this.epochs;
++    }
++
++    public int getEpochs()
++    {
++        return epochs;
++    }
++}
+Index: src/main/java/com/tunerapp/mlmodels/RandomForestSuite.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/mlmodels/RandomForestSuite.java b/src/main/java/com/tunerapp/mlmodels/RandomForestSuite.java
+new file mode 100644
+--- /dev/null	(date 1763352877870)
++++ b/src/main/java/com/tunerapp/mlmodels/RandomForestSuite.java	(date 1763352877870)
+@@ -0,0 +1,342 @@
++package main.java.com.tunerapp.mlmodels;
++
++import java.util.*;
++import java.util.stream.Collectors;
++
++public final class RandomForestSuite
++{
++
++    private RandomForestSuite() {}
++
++    public static class RandomForest
++    {
++
++        private final int nEstimators;
++        private final int maxDepth;
++        private final int minSamplesSplit;
++        private final int maxFeatures;
++        private List<DecisionTree> forest = new ArrayList<>();
++        private final Random random = new Random();
++
++        public RandomForest(int nEstimators, int maxDepth, int minSamplesSplit, int maxFeatures)
++        {
++            this.nEstimators = nEstimators;
++            this.maxDepth = maxDepth;
++            this.minSamplesSplit = minSamplesSplit;
++            this.maxFeatures = maxFeatures;
++        }
++
++        public void fit(double[][] X, int[] y)
++        {
++            forest.clear();
++            for (int i = 0; i < nEstimators; i++)
++            {
++                BootstrapSample sample = createBootstrapSample(X, y);
++                DecisionTree tree = new DecisionTree(maxDepth, minSamplesSplit, maxFeatures);
++                tree.fit(sample.X, sample.y);
++                forest.add(tree);
++            }
++        }
++
++        public int[] predict(double[][] X)
++        {
++            int[] predictions = new int[X.length];
++            for (int i = 0; i < X.length; i++)
++            {
++                predictions[i] = predictSingle(X[i]);
++            }
++            return predictions;
++        }
++
++        private int predictSingle(double[] x)
++        {
++            return forest.stream()
++                    .mapToInt(tree -> tree.predict(x))
++                    .boxed()
++                    .collect(Collectors.groupingBy(vote -> vote, Collectors.counting()))
++                    .entrySet().stream()
++                    .max(Map.Entry.comparingByValue())
++                    .map(Map.Entry::getKey)
++                    .orElse(-1);
++        }
++
++        private BootstrapSample createBootstrapSample(double[][] X, int[] y)
++        {
++            int nSamples = X.length;
++            int[] indices = random.ints(nSamples, 0, nSamples).toArray();
++
++            double[][] X_sample = new double[nSamples][];
++            int[] y_sample = new int[nSamples];
++
++            for (int i = 0; i < nSamples; i++)
++            {
++                X_sample[i] = X[indices[i]];
++                y_sample[i] = y[indices[i]];
++            }
++            return new BootstrapSample(X_sample, y_sample);
++        }
++
++        private static class BootstrapSample
++        {
++            final double[][] X;
++            final int[] y;
++
++            BootstrapSample(double[][] X, int[] y) {
++                this.X = X;
++                this.y = y;
++            }
++        }
++    }
++
++    private static class DecisionTree
++    {
++
++        private Node root;
++        private final int maxDepth;
++        private final int minSamplesSplit;
++        private final int maxFeatures;
++        private final Random random = new Random();
++
++        DecisionTree(int maxDepth, int minSamplesSplit, int maxFeatures)
++        {
++            this.maxDepth = maxDepth;
++            this.minSamplesSplit = minSamplesSplit;
++            this.maxFeatures = maxFeatures;
++        }
++
++        void fit(double[][] X, int[] y)
++        {
++            this.root = buildTree(X, y, 0);
++        }
++
++        int predict(double[] x)
++        {
++            return traverseTree(x, this.root);
++        }
++
++        private int traverseTree(double[] x, Node node)
++        {
++            if (node.isLeaf) return node.value;
++            return x[node.featureIndex] < node.threshold ? traverseTree(x, node.left) : traverseTree(x, node.right);
++        }
++
++        private Node buildTree(double[][] X, int[] y, int depth)
++        {
++            int nSamples = X.length;
++            if (nSamples == 0) return new Node(-1);
++
++            int nFeatures = X[0].length;
++            long nClasses = Arrays.stream(y).distinct().count();
++
++            if (depth >= maxDepth || nSamples < minSamplesSplit || nClasses == 1)
++            {
++                return new Node(mostCommonLabel(y));
++            }
++
++            List<Integer> featureIndices = getRandomFeatureIndices(nFeatures);
++            Split bestSplit = findBestSplit(X, y, featureIndices);
++
++            if (bestSplit.infoGain <= 0)
++            {
++                return new Node(mostCommonLabel(y));
++            }
++
++            Node leftSubtree = buildTree(bestSplit.X_left, bestSplit.y_left, depth + 1);
++            Node rightSubtree = buildTree(bestSplit.X_right, bestSplit.y_right, depth + 1);
++
++            return new Node(bestSplit.featureIndex, bestSplit.threshold, leftSubtree, rightSubtree);
++        }
++
++        private List<Integer> getRandomFeatureIndices(int nFeatures)
++        {
++            List<Integer> allIndices = new ArrayList<>();
++            for (int i = 0; i < nFeatures; i++) allIndices.add(i);
++            Collections.shuffle(allIndices, random);
++            int numFeaturesToSelect = Math.min(this.maxFeatures, nFeatures);
++            return allIndices.subList(0, numFeaturesToSelect);
++        }
++
++        private Split findBestSplit(double[][] X, int[] y, List<Integer> featureIndices)
++        {
++            Split bestSplit = new Split(-1);
++            double currentGini = calculateGini(y);
++            int nSamples = y.length;
++
++            for (int featureIndex : featureIndices)
++            {
++                Set<Double> uniqueValues = new HashSet<>();
++                for (double[] row : X) uniqueValues.add(row[featureIndex]);
++
++                for (double threshold : uniqueValues)
++                {
++                    List<Integer> leftIndices = new ArrayList<>();
++                    List<Integer> rightIndices = new ArrayList<>();
++                    for (int i = 0; i < nSamples; i++)
++                    {
++                        if (X[i][featureIndex] < threshold) leftIndices.add(i);
++                        else rightIndices.add(i);
++                    }
++
++                    if (leftIndices.isEmpty() || rightIndices.isEmpty()) continue;
++
++                    int[] y_left = getSubset(y, leftIndices);
++                    int[] y_right = getSubset(y, rightIndices);
++
++                    double p_left = (double) y_left.length / nSamples;
++                    double p_right = (double) y_right.length / nSamples;
++                    double weightedGini = p_left * calculateGini(y_left) + p_right * calculateGini(y_right);
++                    double infoGain = currentGini - weightedGini;
++
++                    if (infoGain > bestSplit.infoGain)
++                    {
++                        bestSplit.infoGain = infoGain;
++                        bestSplit.featureIndex = featureIndex;
++                        bestSplit.threshold = threshold;
++                        bestSplit.X_left = getSubset(X, leftIndices);
++                        bestSplit.y_left = y_left;
++                        bestSplit.X_right = getSubset(X, rightIndices);
++                        bestSplit.y_right = y_right;
++                    }
++                }
++            }
++            return bestSplit;
++        }
++
++        private double calculateGini(int[] y)
++        {
++            if (y.length == 0) return 0.0;
++            Map<Integer, Long> counts = Arrays.stream(y).boxed().collect(Collectors.groupingBy(i -> i, Collectors.counting()));
++            double impurity = 1.0;
++            for (long count : counts.values())
++            {
++                impurity -= Math.pow((double) count / y.length, 2);
++            }
++            return impurity;
++        }
++
++        private int mostCommonLabel(int[] y)
++        {
++            return Arrays.stream(y).boxed()
++                    .collect(Collectors.groupingBy(i -> i, Collectors.counting()))
++                    .entrySet().stream()
++                    .max(Map.Entry.comparingByValue())
++                    .map(Map.Entry::getKey)
++                    .orElse(-1); // Return -1 for empty/invalid splits
++        }
++
++        private static int[] getSubset(int[] array, List<Integer> indices)
++        {
++            return indices.stream().mapToInt(i -> array[i]).toArray();
++        }
++
++        private static double[][] getSubset(double[][] matrix, List<Integer> indices)
++        {
++            return indices.stream().map(i -> matrix[i]).toArray(double[][]::new);
++        }
++
++        private static class Node
++        {
++            final int featureIndex;
++            final double threshold;
++            final Node left;
++            final Node right;
++            final int value;
++            final boolean isLeaf;
++
++            Node(int featureIndex, double threshold, Node left, Node right)
++            {
++                this.featureIndex = featureIndex; this.threshold = threshold;
++                this.left = left; this.right = right;
++                this.isLeaf = false; this.value = -1;
++            }
++
++            Node(int value)
++            {
++                this.value = value; this.isLeaf = true;
++                this.featureIndex = -1; this.threshold = -1;
++                this.left = null; this.right = null;
++            }
++        }
++
++        private static class Split
++        {
++            int featureIndex; double threshold; double infoGain;
++            double[][] X_left, X_right; int[] y_left, y_right;
++            Split(double initialGain) { this.infoGain = initialGain; }
++        }
++    }
++
++    public static final class ModelMetrics
++    {
++
++        private ModelMetrics() {}
++
++        public static double accuracy(int[] y_true, int[] y_pred)
++        {
++            if (y_true.length != y_pred.length || y_true.length == 0)
++            {
++                throw new IllegalArgumentException("Input arrays must have the same, non-zero length.");
++            }
++            long correct = 0;
++            for (int i = 0; i < y_true.length; i++)
++            {
++                if (y_true[i] == y_pred[i]) correct++;
++            }
++            return (double) correct / y_true.length;
++        }
++
++        public static double precision(int[] y_true, int[] y_pred)
++        {
++            Map<String, Integer> cm = getConfusionMatrixCounts(y_true, y_pred);
++            int tp = cm.get("TP");
++            int fp = cm.get("FP");
++            return (tp + fp) == 0 ? 0.0 : (double) tp / (tp + fp);
++        }
++
++        public static double recall(int[] y_true, int[] y_pred)
++        {
++            Map<String, Integer> cm = getConfusionMatrixCounts(y_true, y_pred);
++            int tp = cm.get("TP");
++            int fn = cm.get("FN");
++            return (tp + fn) == 0 ? 0.0 : (double) tp / (tp + fn);
++        }
++
++        public static double f1_score(int[] y_true, int[] y_pred)
++        {
++            double prec = precision(y_true, y_pred);
++            double rec = recall(y_true, y_pred);
++            return (prec + rec) == 0 ? 0.0 : 2 * (prec * rec) / (prec + rec);
++        }
++
++        private static Map<String, Integer> getConfusionMatrixCounts(int[] y_true, int[] y_pred)
++        {
++            if (y_true.length != y_pred.length)
++            {
++                throw new IllegalArgumentException("Input arrays must have same length.");
++            }
++            Map<String, Integer> counts = new HashMap<>();
++            counts.put("TP", 0); counts.put("FP", 0); counts.put("TN", 0); counts.put("FN", 0);
++
++            for (int i = 0; i < y_true.length; i++)
++            {
++                if (y_true[i] == 1 && y_pred[i] == 1)
++                {
++                    counts.merge("TP", 1, Integer::sum);
++                }
++                else if (y_true[i] == 0 && y_pred[i] == 1)
++                {
++                    counts.merge("FP", 1, Integer::sum);
++                }
++                else if (y_true[i] == 0 && y_pred[i] == 0)
++                {
++                    counts.merge("TN", 1, Integer::sum);
++                }
++                else if (y_true[i] == 1 && y_pred[i] == 0)
++                {
++                    counts.merge("FN", 1, Integer::sum);
++                }
++            }
++            return counts;
++        }
++    }
++}
+Index: src/main/java/com/tunerapp/data/DataSplit.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/data/DataSplit.java b/src/main/java/com/tunerapp/data/DataSplit.java
+new file mode 100644
+--- /dev/null	(date 1763352877852)
++++ b/src/main/java/com/tunerapp/data/DataSplit.java	(date 1763352877852)
+@@ -0,0 +1,86 @@
++package main.java.com.tunerapp.data;
++
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++import java.util.Random;
++
++public class DataSplit
++{
++    double test_size;
++    int random_state;
++
++    public DataSplit(double test_size, int random_state)
++    {
++        this.test_size = test_size;
++        this.random_state = random_state;
++    }
++
++    public List<Object> train_test_split(double[][] X, Object y)
++    {
++        int n_samples = X.length;
++        List<Integer> indices = new ArrayList<>();
++        for (int i = 0; i < n_samples; i++) indices.add(i);
++
++        Collections.shuffle(indices, new Random(this.random_state));
++
++        int test_count = (int) (n_samples * this.test_size);
++        int train_count = n_samples - test_count;
++
++        List<Integer> train_indices = indices.subList(0, train_count);
++        List<Integer> test_indices = indices.subList(train_count, n_samples);
++
++        double[][] X_train = new double[train_count][];
++        double[][] X_test = new double[test_count][];
++        for (int i = 0; i < train_count; i++) X_train[i] = X[train_indices.get(i)];
++        for (int i = 0; i < test_count; i++) X_test[i] = X[test_indices.get(i)];
++
++        Object y_train, y_test;
++
++        if (y instanceof int[])
++        {
++            int[] y_vector = (int[]) y;
++            int[] y_train_vector = new int[train_count];
++            int[] y_test_vector = new int[test_count];
++            for (int i = 0; i < train_count; i++) y_train_vector[i] = y_vector[train_indices.get(i)];
++            for (int i = 0; i < test_count; i++) y_test_vector[i] = y_vector[test_indices.get(i)];
++            y_train = y_train_vector;
++            y_test = y_test_vector;
++
++        }
++        else if (y instanceof double[])
++        {
++            double[] y_vector = (double[]) y;
++            double[] y_train_vector = new double[train_count];
++            double[] y_test_vector = new double[test_count];
++            for (int i = 0; i < train_count; i++) y_train_vector[i] = y_vector[train_indices.get(i)];
++            for (int i = 0; i < test_count; i++) y_test_vector[i] = y_vector[test_indices.get(i)];
++            y_train = y_train_vector;
++            y_test = y_test_vector;
++
++        }
++        else if (y instanceof double[][])
++        {
++            double[][] y_matrix = (double[][]) y;
++            double[][] y_train_matrix = new double[train_count][];
++            double[][] y_test_matrix = new double[test_count][];
++            for (int i = 0; i < train_count; i++) y_train_matrix[i] = y_matrix[train_indices.get(i)];
++            for (int i = 0; i < test_count; i++) y_test_matrix[i] = y_matrix[test_indices.get(i)];
++            y_train = y_train_matrix;
++            y_test = y_test_matrix;
++
++        }
++        else
++        {
++            throw new IllegalArgumentException("Unsupported type for y. Must be double[][], double[], or int[].");
++        }
++
++        List<Object> result = new ArrayList<>();
++        result.add(X_train);
++        result.add(X_test);
++        result.add(y_train);
++        result.add(y_test);
++
++        return result;
++    }
++}
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/tunablemodels/MyTunableMGDRegressor.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/tunablemodels/MyTunableMGDRegressor.java b/src/main/java/com/tunerapp/tunablemodels/MyTunableMGDRegressor.java
+new file mode 100644
+--- /dev/null	(date 1766280458519)
++++ b/src/main/java/com/tunerapp/tunablemodels/MyTunableMGDRegressor.java	(date 1766280458519)
+@@ -0,0 +1,66 @@
++package main.java.com.tunerapp.tunablemodels;
++
++import main.java.com.tunerapp.data.CrossValidator;
++import main.java.com.tunerapp.tuner.TunableModel;
++import main.java.com.tunerapp.mlmodels.MGDRegressor;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Map;
++
++public class MyTunableMGDRegressor implements TunableModel<double[][], double[]> {
++
++    private int epochs;
++    private double lr;
++
++    @Override
++    public void setParams(Map<String, Object> params)
++    {
++        this.epochs = (int) params.getOrDefault("epochs", 100);
++        this.lr = (double) params.getOrDefault("lr", 0.01);
++    }
++
++    @Override
++    public double fitAndEvaluate(double[][] full_X_train, double[] full_y_train, CrossValidator cv) {
++
++        List<Double> foldScores = new ArrayList<>();
++
++        // --- THE CROSS-VALIDATION LOOP ---
++        for (int i = 0; i < cv.getK(); i++) {
++            CrossValidator.Fold fold = cv.getFold(i);
++
++            // Get the specific train/validation data for this fold
++            double[][] X_fold_train = getSubset(full_X_train, fold.trainIndices);
++            double[] y_fold_train = getSubset(full_y_train, fold.trainIndices);
++            double[][] X_fold_val = getSubset(full_X_train, fold.validationIndices);
++            double[] y_fold_val = getSubset(full_y_train, fold.validationIndices);
++
++            // Instantiate and train a new model for this fold
++            MGDRegressor regressor = new MGDRegressor(this.epochs, this.lr);
++            regressor.train(X_fold_train, y_fold_train);
++
++            // Evaluate and store the score for this fold
++            double[] y_pred = regressor.predict(X_fold_val);
++            // Use a stable metric like MAE for evaluation. The tuner MINIMIZES this score.
++            double score = MGDRegressor.mae(y_fold_val, y_pred);
++            foldScores.add(score);
++        }
++
++        return foldScores.stream().mapToDouble(d -> d).average().orElse(Double.MAX_VALUE);
++    }
++
++    private double[][] getSubset(double[][] original, int[] indices) {
++        double[][] subset = new double[indices.length][];
++        for (int i = 0; i < indices.length; i++) {
++            subset[i] = original[indices[i]];
++        }
++        return subset;
++    }
++
++    private double[] getSubset(double[] original, int[] indices) {
++        double[] subset = new double[indices.length];
++        for (int i = 0; i < indices.length; i++) {
++            subset[i] = original[indices[i]];
++        }
++        return subset;
++    }
++}
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/tuner/TunableModel.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/tuner/TunableModel.java b/src/main/java/com/tunerapp/tuner/TunableModel.java
+new file mode 100644
+--- /dev/null	(date 1766280458642)
++++ b/src/main/java/com/tunerapp/tuner/TunableModel.java	(date 1766280458642)
+@@ -0,0 +1,15 @@
++package main.java.com.tunerapp.tuner;
++
++import main.java.com.tunerapp.data.CrossValidator;
++import java.util.Map;
++
++public interface TunableModel<X_TYPE, Y_TYPE> {
++
++    void setParams(Map<String, Object> params);
++
++    /**
++     * UPDATED SIGNATURE:
++     * Now takes the full training data and a CrossValidator object.
++     */
++    double fitAndEvaluate(X_TYPE full_X_train, Y_TYPE full_y_train, CrossValidator cv);
++}
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/tuner/ParamSpace.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/tuner/ParamSpace.java b/src/main/java/com/tunerapp/tuner/ParamSpace.java
+new file mode 100644
+--- /dev/null	(date 1766280458615)
++++ b/src/main/java/com/tunerapp/tuner/ParamSpace.java	(date 1766280458615)
+@@ -0,0 +1,76 @@
++/*package main.java.com.tunerapp.tuner;
++
++import java.util.*;
++
++public class ParamSpace
++{
++    private final Map<String, List<? extends Comparable<?>>> space = new LinkedHashMap<>();
++
++    public <T extends Comparable<T>> void add(String name, List<T> values)
++    {
++        if (values == null || values.isEmpty())
++        {
++            throw new IllegalArgumentException("Values list cannot be null or empty.");
++        }
++        Collections.sort(values);
++        this.space.put(name, values);
++    }
++
++    public List<String> getParamNames()
++    {
++        return new ArrayList<>(this.space.keySet());
++    }
++
++    public List<?> getValues(String name)
++    {
++        return this.space.get(name);
++    }
++
++    public int getParamCount()
++    {
++        return this.space.size();
++    }
++}*/
++
++
++// File: ParamSpace.java (CORRECTED and FINAL Version)
++package main.java.com.tunerapp.tuner;
++
++import java.util.*;
++
++/**
++ * A class to hold the hyperparameter search space.
++ * This version is more flexible to handle data from JSON parsing.
++ */
++public class ParamSpace {
++
++    private final Map<String, List<? extends Comparable<?>>> space = new LinkedHashMap<>();
++
++    /**
++     * A more flexible add method that accepts a list of any comparable objects.
++     * It handles sorting internally.
++     *
++     * @param name The name of the hyperparameter.
++     * @param values A list of values to test.
++     */
++    public <T extends Comparable<T>> void add(String name, List<T> values) {
++        if (values == null || values.isEmpty()) {
++            throw new IllegalArgumentException("Values list for parameter '" + name + "' cannot be null or empty.");
++        }
++        List<T> sortedValues = new ArrayList<>(values);
++        Collections.sort(sortedValues);
++        this.space.put(name, sortedValues);
++    }
++
++    public List<String> getParamNames() {
++        return new ArrayList<>(this.space.keySet());
++    }
++
++    public List<?> getValues(String name) {
++        return this.space.get(name);
++    }
++
++    public int getParamCount() {
++        return this.space.size();
++    }
++}
+Index: src/main/java/com/tunerapp/tuner/GridSearchTuner.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/tuner/GridSearchTuner.java b/src/main/java/com/tunerapp/tuner/GridSearchTuner.java
+new file mode 100644
+--- /dev/null	(date 1766280458758)
++++ b/src/main/java/com/tunerapp/tuner/GridSearchTuner.java	(date 1766280458758)
+@@ -0,0 +1,151 @@
++package main.java.com.tunerapp.tuner;
++
++import main.java.com.tunerapp.data.CrossValidator;
++
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.concurrent.*;
++
++/**
++ * A Grid Search hyperparameter tuner that utilizes all available CPU cores
++ * by running model training trials in parallel using a Java thread pool.
++ * This version uses K-Fold Cross-Validation for robust model evaluation.
++ *
++ * @param <X_TYPE> The generic type for feature data.
++ * @param <Y_TYPE> The generic type for target data.
++ */
++public class GridSearchTuner<X_TYPE, Y_TYPE> {
++
++    private final TunableModel<X_TYPE, Y_TYPE> modelTemplate;
++    private final ParamSpace paramSpace;
++
++    /**
++     * Holds the final result of the entire tuning process. Declared as 'static'
++     * so it can be easily referenced from other classes like Main.
++     */
++    public static class TuningResult {
++        public final Map<String, Object> bestParams;
++        public final double bestScore;
++        public final List<TrialResult> allTrialResults;
++
++        public TuningResult(Map<String, Object> bestParams, double bestScore, List<TrialResult> allTrials) {
++            this.bestParams = bestParams;
++            this.bestScore = bestScore;
++            this.allTrialResults = allTrials;
++        }
++
++        @Override
++        public String toString() {
++            return "TuningResult{" + "bestParams=" + bestParams + ", bestScore=" + bestScore + '}';
++        }
++    }
++
++    /**
++     * Holds the result of a single model training trial. Declared as 'static'
++     * for clean, independent usage.
++     */
++    public static class TrialResult {
++        public final Map<String, Object> params;
++        public final double score;
++
++        public TrialResult(Map<String, Object> params, double score) {
++            this.params = params;
++            this.score = score;
++        }
++    }
++
++    public GridSearchTuner(TunableModel<X_TYPE, Y_TYPE> model, ParamSpace paramSpace) {
++        this.modelTemplate = model;
++        this.paramSpace = paramSpace;
++    }
++
++    public TuningResult tune(X_TYPE full_X_train, Y_TYPE full_y_train, CrossValidator cv) {
++        List<Map<String, Object>> allCombinations = generateCombinations();
++        System.out.printf("Generated %d total combinations to test.\n", allCombinations.size());
++
++        int numCores = Runtime.getRuntime().availableProcessors();
++        System.out.printf("Starting parallel grid search on %d CPU cores using %d-fold CV.\n", numCores, cv.getK());
++        ExecutorService executor = Executors.newFixedThreadPool(numCores);
++
++        List<Future<TrialResult>> futures = new ArrayList<>();
++
++        for (Map<String, Object> params : allCombinations) {
++            Callable<TrialResult> task = () -> {
++                modelTemplate.setParams(params);
++                double score = modelTemplate.fitAndEvaluate(full_X_train, full_y_train, cv);
++
++                if (Double.isNaN(score) || Double.isInfinite(score)) {
++                    score = Double.MAX_VALUE; // Assign max penalty for failed trials
++                }
++                System.out.printf("  -> Finished trial with params: %s, Avg CV Score: %.4f\n", params, score);
++                return new TrialResult(params, score);
++            };
++            futures.add(executor.submit(task));
++        }
++
++        executor.shutdown();
++        try {
++            if (!executor.awaitTermination(2, TimeUnit.HOURS)) {
++                System.err.println("Grid search timed out and did not complete.");
++                executor.shutdownNow();
++            }
++        } catch (InterruptedException e) {
++            System.err.println("Grid search was interrupted.");
++            executor.shutdownNow();
++            Thread.currentThread().interrupt();
++        }
++
++        List<TrialResult> allResults = new ArrayList<>();
++        TrialResult bestResult = null;
++        for (Future<TrialResult> future : futures) {
++            try {
++
++                if (future.isDone()) {
++                    TrialResult currentResult = future.get();
++                    allResults.add(currentResult);
++
++                    if (bestResult == null || currentResult.score < bestResult.score) {
++                        bestResult = currentResult;
++                    }
++                }
++            } catch (InterruptedException | ExecutionException e) {
++                System.err.println("A trial failed with an exception: " + e.getMessage());
++            }
++        }
++
++        if (bestResult == null) {
++            throw new RuntimeException("Grid Search completed without any successful trials.");
++        }
++
++        return new TuningResult(bestResult.params, bestResult.score, allResults);
++    }
++
++    private List<Map<String, Object>> generateCombinations() {
++        List<Map<String, Object>> combinations = new ArrayList<>();
++        List<String> paramNames = paramSpace.getParamNames();
++        if (paramNames.isEmpty()) {
++            return combinations;
++        }
++
++        generateRecursive(0, new HashMap<>(), paramNames, combinations);
++        return combinations;
++    }
++
++    private void generateRecursive(int paramIndex, Map<String, Object> currentCombination,
++                                   List<String> paramNames, List<Map<String, Object>> finalCombinations) {
++        if (paramIndex == paramNames.size()) {
++            finalCombinations.add(new HashMap<>(currentCombination));
++            return;
++        }
++
++        String currentParamName = paramNames.get(paramIndex);
++        List<?> values = paramSpace.getValues(currentParamName);
++
++        for (Object value : values) {
++            currentCombination.put(currentParamName, value);
++            generateRecursive(paramIndex + 1, currentCombination, paramNames, finalCombinations);
++        }
++    }
++}
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/tunablemodels/MyTunableRandomForest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/tunablemodels/MyTunableRandomForest.java b/src/main/java/com/tunerapp/tunablemodels/MyTunableRandomForest.java
+new file mode 100644
+--- /dev/null	(date 1766280458577)
++++ b/src/main/java/com/tunerapp/tunablemodels/MyTunableRandomForest.java	(date 1766280458577)
+@@ -0,0 +1,83 @@
++package main.java.com.tunerapp.tunablemodels;
++
++import main.java.com.tunerapp.data.CrossValidator;
++import main.java.com.tunerapp.tuner.TunableModel;
++import main.java.com.tunerapp.mlmodels.RandomForestSuite;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Map;
++import java.lang.Math;
++
++public class MyTunableRandomForest implements TunableModel<double[][], int[]> {
++
++    private int nEstimators;
++    private int maxDepth;
++    private int minSamplesSplit;
++    private int maxFeatures;
++    private int nFeaturesInDataset = -1;
++
++    @Override
++    public void setParams(Map<String, Object> params) {
++
++        this.nEstimators = (int) params.getOrDefault("n_estimators", 100);
++        this.maxDepth = (int) params.getOrDefault("max_depth", 10);
++        this.minSamplesSplit = (int) params.getOrDefault("min_samples_split", 2);
++        this.maxFeatures = (int) params.getOrDefault("max_features", -1);
++    }
++
++    @Override
++    public double fitAndEvaluate(double[][] full_X_train, int[] full_y_train, CrossValidator cv) {
++
++        List<Double> foldScores = new ArrayList<>();
++
++        if (this.nFeaturesInDataset == -1 && full_X_train.length > 0) {
++            this.nFeaturesInDataset = full_X_train[0].length;
++        }
++
++        for (int i = 0; i < cv.getK(); i++)
++        {
++            CrossValidator.Fold fold = cv.getFold(i);
++            double[][] X_fold_train = getSubset(full_X_train, fold.trainIndices);
++            int[] y_fold_train = getSubset(full_y_train, fold.trainIndices);
++            double[][] X_fold_val = getSubset(full_X_train, fold.validationIndices);
++            int[] y_fold_val = getSubset(full_y_train, fold.validationIndices);
++
++            int actualMaxFeatures = this.maxFeatures;
++            if (actualMaxFeatures == -1 && this.nFeaturesInDataset > 0) {
++                actualMaxFeatures = (int) Math.round(Math.sqrt(this.nFeaturesInDataset));
++            } else if (actualMaxFeatures == -1) {
++                actualMaxFeatures = 1; // Fallback
++            }
++
++            RandomForestSuite.RandomForest rf = new RandomForestSuite.RandomForest(
++                    this.nEstimators,
++                    this.maxDepth,
++                    this.minSamplesSplit,
++                    actualMaxFeatures
++            );
++
++            rf.fit(X_fold_train, y_fold_train);
++            int[] y_pred = rf.predict(X_fold_val);
++            double f1_score = RandomForestSuite.ModelMetrics.f1_score(y_fold_val, y_pred);
++            foldScores.add(1.0 - f1_score);
++        }
++
++        return foldScores.stream().mapToDouble(d -> d).average().orElse(Double.MAX_VALUE);
++    }
++
++    private double[][] getSubset(double[][] original, int[] indices) {
++        double[][] subset = new double[indices.length][];
++        for (int i = 0; i < indices.length; i++) {
++            subset[i] = original[indices[i]];
++        }
++        return subset;
++    }
++
++    private int[] getSubset(int[] original, int[] indices) {
++        int[] subset = new int[indices.length];
++        for (int i = 0; i < indices.length; i++) {
++            subset[i] = original[indices[i]];
++        }
++        return subset;
++    }
++}
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/app/Main.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/app/Main.java b/src/main/java/com/tunerapp/app/Main.java
+new file mode 100644
+--- /dev/null	(date 1766280458465)
++++ b/src/main/java/com/tunerapp/app/Main.java	(date 1766280458465)
+@@ -0,0 +1,93 @@
++package main.java.com.tunerapp.app;
++
++import main.java.com.tunerapp.data.CrossValidator;
++import main.java.com.tunerapp.tunablemodels.MyTunableRandomForest;
++import main.java.com.tunerapp.tuner.GridSearchTuner;
++import main.java.com.tunerapp.tuner.ParamSpace;
++import main.java.com.tunerapp.tuner.TunableModel;
++import main.java.com.tunerapp.data.CSVLoader;
++import main.java.com.tunerapp.data.DataSplit;
++import main.java.com.tunerapp.mlmodels.RandomForestSuite;
++import java.util.Arrays;
++import java.util.List;
++
++public class Main {
++    public static void main(String[] args) {
++
++        // Configuration
++        String dataFilePath = "my_classification_data.csv";
++        String targetColumn = "is_spam";
++        boolean isClassificationTask = true;
++        int random_state = 42;
++        int k_folds = 5;
++
++        try {
++            // Data Loading and Splitting
++            System.out.println("Loading data from: " + dataFilePath);
++            CSVLoader.Dataset dataset = CSVLoader.load(dataFilePath, targetColumn, isClassificationTask);
++
++            System.out.println("Splitting data...");
++            DataSplit holdoutSplitter = new DataSplit(0.20, random_state);
++            List<Object> splits = holdoutSplitter.train_test_split(dataset.X, dataset.y);
++
++            double[][] X_train_for_tuning = (double[][]) splits.get(0);
++            double[][] X_holdout_test = (double[][]) splits.get(1);
++            int[] y_train_for_tuning = (int[]) splits.get(2);
++            int[] y_holdout_test = (int[]) splits.get(3);
++
++            System.out.printf("Data loaded: %d for tuning, %d for final holdout test.\n", X_train_for_tuning.length, X_holdout_test.length);
++
++            // Tuner Configuration
++            System.out.println("Configuring tuner for RandomForest...");
++            TunableModel<double[][], int[]> myModel = new MyTunableRandomForest();
++
++            ParamSpace space = new ParamSpace();
++            space.add("n_estimators", Arrays.asList(50, 100, 150));
++            space.add("max_depth", Arrays.asList(3, 5, 10));
++            space.add("max_features", Arrays.asList(1, 2, 3));
++            space.add("min_samples_split", Arrays.asList(2, 5, 10));
++
++            // Cross-Validation Setup
++            System.out.printf("Using %d-Fold Cross-Validation for evaluation.\n", k_folds);
++            CrossValidator cv = new CrossValidator(X_train_for_tuning.length, k_folds, random_state);
++
++            // Assembly and Execution
++            System.out.println("Assembling and running the tuner...");
++            GridSearchTuner<double[][], int[]> tuner = new GridSearchTuner<>(myModel, space);
++
++            GridSearchTuner.TuningResult bestResult = tuner.tune(X_train_for_tuning, y_train_for_tuning, cv);
++
++            if (bestResult == null || bestResult.bestParams == null) {
++                System.err.println("Tuning failed to produce a valid result.");
++                return;
++            }
++
++            // Display Results
++            System.out.println("\n-------------------------------");
++            System.out.println("    HYPERPARAMETER TUNING COMPLETE");
++            System.out.println("---------------------------------");
++            System.out.printf("Best Hyperparameters found: %s\n", bestResult.bestParams.toString());
++            System.out.printf("Best Average CV Score (1.0 - F1_Score): %.4f\n", bestResult.bestScore);
++            System.out.printf("Corresponding Best Average F1-Score: %.4f\n", (1.0 - bestResult.bestScore));
++
++            // Final Model Evaluation
++            System.out.println("\n--- Evaluating final model on the unseen holdout test set ---");
++
++            RandomForestSuite.RandomForest finalModel = new RandomForestSuite.RandomForest(
++                    (int) bestResult.bestParams.get("n_estimators"),
++                    (int) bestResult.bestParams.get("max_depth"),
++                    (int) bestResult.bestParams.get("min_samples_split"),
++                    (int) bestResult.bestParams.get("max_features")
++            );
++            finalModel.fit(X_train_for_tuning, y_train_for_tuning);
++            int[] y_final_pred = finalModel.predict(X_holdout_test);
++            double final_f1_score = RandomForestSuite.ModelMetrics.f1_score(y_holdout_test, y_final_pred);
++
++            System.out.printf("Final model F1-Score on holdout data: %.4f\n", final_f1_score);
++
++        } catch (Exception e) {
++            System.err.println("\n--- An unexpected error occurred! ---");
++            e.printStackTrace();
++        }
++    }
++}
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/data/CSVLoader.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/data/CSVLoader.java b/src/main/java/com/tunerapp/data/CSVLoader.java
+new file mode 100644
+--- /dev/null	(date 1763352877987)
++++ b/src/main/java/com/tunerapp/data/CSVLoader.java	(date 1763352877987)
+@@ -0,0 +1,121 @@
++package main.java.com.tunerapp.data;
++
++import org.apache.commons.csv.CSVFormat;
++import org.apache.commons.csv.CSVParser;
++import org.apache.commons.csv.CSVRecord;
++
++import java.io.FileReader;
++import java.io.IOException;
++import java.io.Reader;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * A utility class to load a dataset from a CSV file.
++ * This version is overloaded to support loading from a file path (String)
++ * or from a generic Reader (like an InputStreamReader for web uploads).
++ */
++public class CSVLoader {
++
++    /**
++     * A simple container to hold the loaded feature matrix (X), target vector (y),
++     * and column headers.
++     */
++    public static class Dataset {
++        public final double[][] X;
++        public final Object y; // Can be int[] for classification or double[] for regression
++        public final String[] headers;
++
++        public Dataset(double[][] X, Object y, String[] headers) {
++            this.X = X;
++            this.y = y;
++            this.headers = headers;
++        }
++    }
++
++    /**
++     * CONVENIENCE METHOD: Loads data from a file path.
++     * This is useful for command-line applications and local testing.
++     * @param filePath The full path to the CSV file.
++     * @param targetColumnName The exact name of the column to be used as the target (y).
++     * @param isClassification True if the target is for classification (int[]), false for regression (double[]).
++     * @return A Dataset object.
++     * @throws IOException If the file cannot be found or read.
++     */
++    public static Dataset load(String filePath, String targetColumnName, boolean isClassification) throws IOException {
++        // This method simply creates a FileReader and delegates to the core load method.
++        // The try-with-resources block ensures the FileReader is closed automatically.
++        try (Reader reader = new FileReader(filePath)) {
++            return load(reader, targetColumnName, isClassification);
++        }
++    }
++
++    /**
++     * CORE METHOD: Loads data from any given Reader.
++     * This is the general-purpose method used by the web agent.
++     * @param providedReader The Reader object (e.g., an InputStreamReader) to read data from.
++     * @param targetColumnName The exact name of the column to be used as the target (y).
++     * @param isClassification True if the target is for classification, false for regression.
++     * @return A Dataset object.
++     * @throws IOException If there is an error during reading.
++     */
++    public static Dataset load(Reader providedReader, String targetColumnName, boolean isClassification) throws IOException {
++
++        List<double[]> featureList = new ArrayList<>();
++        List<Double> targetList = new ArrayList<>();
++        String[] headers = null;
++        int targetColumnIndex = -1;
++
++        // The CSVParser will be closed automatically by the try-with-resources block.
++        try (CSVParser csvParser = new CSVParser(providedReader, CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreEmptyLines(true))) {
++
++            Map<String, Integer> headerMap = csvParser.getHeaderMap();
++            if (!headerMap.containsKey(targetColumnName)) {
++                throw new IllegalArgumentException("Target column '" + targetColumnName + "' not found in CSV header.");
++            }
++            targetColumnIndex = headerMap.get(targetColumnName);
++            headers = headerMap.keySet().toArray(new String[0]);
++
++            int numFeatures = headers.length - 1;
++            if (numFeatures < 1) {
++                throw new IllegalArgumentException("CSV must contain at least one feature column besides the target column.");
++            }
++
++            for (CSVRecord csvRecord : csvParser) {
++                double[] features = new double[numFeatures];
++                int featureIdx = 0;
++                for (int i = 0; i < headers.length; i++) {
++                    String rawValue = csvRecord.get(i);
++                    // Robustness: Treat empty or non-parsable values as 0.0 to prevent crashes.
++                    double value = 0.0;
++                    try {
++                        if (rawValue != null && !rawValue.trim().isEmpty()) {
++                            value = Double.parseDouble(rawValue);
++                        }
++                    } catch (NumberFormatException e) {
++                        System.err.println("Warning: Could not parse value '" + rawValue + "'. Treating as 0.0.");
++                    }
++
++                    if (i == targetColumnIndex) {
++                        targetList.add(value);
++                    } else {
++                        features[featureIdx++] = value;
++                    }
++                }
++                featureList.add(features);
++            }
++        }
++
++        double[][] X = featureList.toArray(new double[0][]);
++        Object y;
++
++        if (isClassification) {
++            y = targetList.stream().mapToInt(Double::intValue).toArray();
++        } else {
++            y = targetList.stream().mapToDouble(Double::doubleValue).toArray();
++        }
++
++        return new Dataset(X, y, headers);
++    }
++}
+\ No newline at end of file
+Index: pom.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pom.xml b/pom.xml
+new file mode 100644
+--- /dev/null	(date 1763409250470)
++++ b/pom.xml	(date 1763409250470)
+@@ -0,0 +1,100 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project xmlns="http://maven.apache.org/POM/4.0.0"
++         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
++         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
++    <modelVersion>4.0.0</modelVersion>
++
++    <!-- Define your project's coordinates -->
++    <groupId>com.tunerapp</groupId>
++    <artifactId>tuner-agent</artifactId>
++    <version>1.0-SNAPSHOT</version>
++
++    <!-- Set Java version -->
++    <properties>
++        <maven.compiler.source>11</maven.compiler.source>
++        <maven.compiler.target>11</maven.compiler.target>
++        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
++    </properties>
++
++    <!-- Define all external libraries your project needs -->
++    <dependencies>
++        <!-- For the lightweight embedded web server -->
++        <dependency>
++            <groupId>io.javalin</groupId>
++            <artifactId>javalin</artifactId>
++            <version>5.6.3</version> <!-- I've updated this to a newer stable version -->
++        </dependency>
++        <!-- Required logging backend for Javalin -->
++        <dependency>
++            <groupId>org.slf4j</groupId>
++            <artifactId>slf4j-simple</artifactId>
++            <version>2.0.5</version> <!-- I've updated this to a newer stable version -->
++        </dependency>
++
++        <!-- For parsing JSON from the front-end -->
++        <dependency>
++            <groupId>com.google.code.gson</groupId>
++            <artifactId>gson</artifactId>
++            <version>2.10.1</version> <!-- I've updated this to a newer stable version -->
++        </dependency>
++
++        <!-- For parsing CSV data -->
++        <dependency>
++            <groupId>org.apache.commons</groupId>
++            <artifactId>commons-csv</artifactId>
++            <version>1.9.0</version>
++        </dependency>
++
++        <!-- This is the library Javalin uses to convert Java objects to JSON -->
++        <dependency>
++            <groupId>com.fasterxml.jackson.core</groupId>
++            <artifactId>jackson-databind</artifactId>
++            <version>2.15.2</version> <!-- A recent, stable version -->
++        </dependency>
++
++    </dependencies>
++
++    <!-- ==================================================================== -->
++    <!-- === THIS IS THE CRITICAL SECTION THAT NEEDS TO BE ADDED/MODIFIED === -->
++    <!-- ==================================================================== -->
++    <build>
++        <!-- This tells Maven your Java code is in `src` not `src/main/java` -->
++        <sourceDirectory>src</sourceDirectory>
++
++        <resources>
++            <!-- This tells Maven your resource files are in `src/resources` -->
++            <resource>
++                <directory>src/resources</directory>
++            </resource>
++        </resources>
++
++        <plugins>
++            <!-- Plugin to create a single "fat JAR" with all dependencies -->
++            <plugin>
++                <groupId>org.apache.maven.plugins</groupId>
++                <artifactId>maven-assembly-plugin</artifactId>
++                <version>3.3.0</version>
++                <configuration>
++                    <archive>
++                        <manifest>
++                            <mainClass>main.java.com.tunerapp.agent.TunerAgent</mainClass>
++                        </manifest>
++                    </archive>
++                    <descriptorRefs>
++                        <descriptorRef>jar-with-dependencies</descriptorRef>
++                    </descriptorRefs>
++                </configuration>
++                <executions>
++                    <execution>
++                        <id>make-assembly</id>
++                        <phase>package</phase>
++                        <goals>
++                            <goal>single</goal>
++                        </goals>
++                    </execution>
++                </executions>
++            </plugin>
++        </plugins>
++    </build>
++
++</project>
+\ No newline at end of file
+Index: my_classification_data.csv
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/my_classification_data.csv b/my_classification_data.csv
+new file mode 100644
+--- /dev/null	(date 1763157179157)
++++ b/my_classification_data.csv	(date 1763157179157)
+@@ -0,0 +1,13 @@
++feature1,feature2,feature3,is_spam
++15.5,2.8,5.1,0
++12.1,3.1,8.9,1
++14.2,2.5,4.5,0
++13.8,3.5,9.2,1
++16.1,2.2,3.8,0
++11.9,3.8,10.1,1
++15.8,2.6,4.1,0
++13.2,3.9,9.8,1
++17.3,2.1,5.5,0
++12.5,3.3,11.2,1
++14.9,2.7,4.8,0
++13.5,4.0,10.5,1
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+new file mode 100644
+--- /dev/null	(date 1766281942526)
++++ b/.idea/vcs.xml	(date 1766281942526)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="VcsDirectoryMappings">
++    <mapping directory="$PROJECT_DIR$" vcs="Git" />
++  </component>
++</project>
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/data/CrossValidator.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/data/CrossValidator.java b/src/main/java/com/tunerapp/data/CrossValidator.java
+new file mode 100644
+--- /dev/null	(date 1766280458712)
++++ b/src/main/java/com/tunerapp/data/CrossValidator.java	(date 1766280458712)
+@@ -0,0 +1,83 @@
++package main.java.com.tunerapp.data;
++
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++import java.util.Random;
++
++public class CrossValidator {
++
++    private final int k;
++    private final List<int[]> trainIndices;
++    private final List<int[]> validationIndices;
++
++    public static class Fold {
++        public final int[] trainIndices;
++        public final int[] validationIndices;
++        public Fold(int[] train, int[] val) {
++            this.trainIndices = train;
++            this.validationIndices = val;
++        }
++    }
++
++    public CrossValidator(int n_samples, int k, int random_state) {
++        if (k < 2) {
++            throw new IllegalArgumentException("Number of folds (k) must be at least 2.");
++        }
++        if (n_samples < k) {
++            throw new IllegalArgumentException("Number of samples must be greater than or equal to k.");
++        }
++        this.k = k;
++        this.trainIndices = new ArrayList<>();
++        this.validationIndices = new ArrayList<>();
++
++        // Create a shuffled list of indices from 0 to n_samples-1
++        List<Integer> indices = new ArrayList<>();
++        for (int i = 0; i < n_samples; i++) {
++            indices.add(i);
++        }
++        Collections.shuffle(indices, new Random(random_state));
++
++        // Split the indices into k folds
++        int foldSize = n_samples / k;
++        List<List<Integer>> folds = new ArrayList<>();
++        for (int i = 0; i < k; i++) {
++            int start = i * foldSize;
++            // The last fold might be larger to account for remainders
++            int end = (i == k - 1) ? n_samples : (i + 1) * foldSize;
++            folds.add(new ArrayList<>(indices.subList(start, end)));
++        }
++
++        // For each fold, create the corresponding train and validation index arrays
++        for (int i = 0; i < k; i++) {
++            List<Integer> valFold = folds.get(i);
++            List<Integer> trainFolds = new ArrayList<>();
++
++            for (int j = 0; j < k; j++) {
++                if (i != j) {
++                    trainFolds.addAll(folds.get(j));
++                }
++            }
++
++            // Store the final primitive arrays
++            this.validationIndices.add(valFold.stream().mapToInt(Integer::intValue).toArray());
++            this.trainIndices.add(trainFolds.stream().mapToInt(Integer::intValue).toArray());
++        }
++    }
++
++    public int getK() {
++        return this.k;
++    }
++
++    /**
++     * Returns a specific train/validation fold.
++     * @param foldIndex The index of the fold (from 0 to k-1).
++     * @return A Fold object containing the train and validation indices.
++     */
++    public Fold getFold(int foldIndex) {
++        if (foldIndex < 0 || foldIndex >= k) {
++            throw new IndexOutOfBoundsException("Fold index must be between 0 and " + (k-1));
++        }
++        return new Fold(trainIndices.get(foldIndex), validationIndices.get(foldIndex));
++    }
++}
+\ No newline at end of file
+Index: target/maven-archiver/pom.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>ISO-8859-1
+===================================================================
+diff --git a/target/maven-archiver/pom.properties b/target/maven-archiver/pom.properties
+new file mode 100644
+--- /dev/null	(date 1763408110418)
++++ b/target/maven-archiver/pom.properties	(date 1763408110418)
+@@ -0,0 +1,3 @@
++artifactId=tuner-agent
++groupId=com.tunerapp
++version=1.0-SNAPSHOT
+Index: src/resources/public/index.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/resources/public/index.html b/src/resources/public/index.html
+new file mode 100644
+--- /dev/null	(date 1763351156954)
++++ b/src/resources/public/index.html	(date 1763351156954)
+@@ -0,0 +1,126 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <title>Local ML Tuner</title>
++    <style>
++        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; margin: 2em; background-color: #f8f9fa; color: #212529; }
++        #container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
++        fieldset { border: 1px solid #dee2e6; border-radius: 5px; padding: 1.5em; margin-bottom: 1.5em; }
++        legend { font-weight: bold; font-size: 1.2em; padding: 0 0.5em; }
++        pre { background-color: #e9ecef; padding: 1em; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; font-family: "Courier New", Courier, monospace; border: 1px solid #dee2e6;}
++        button { font-size: 1.1em; padding: 0.7em 1.2em; border-radius: 5px; border: none; color: #fff; background-color: #007bff; cursor: pointer; transition: background-color 0.2s; }
++        button:hover { background-color: #0056b3; }
++        button:disabled { background-color: #6c757d; cursor: not-allowed; }
++        h1, h2 { color: #343a40; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
++        label { display: block; margin-bottom: 0.5em; font-weight: 500; }
++        input, select, textarea { width: 100%; padding: 0.5em; border-radius: 4px; border: 1px solid #ced4da; box-sizing: border-box; font-family: inherit; font-size: 1em; }
++        textarea { resize: vertical; }
++    </style>
++</head>
++<body>
++<div id="container">
++    <h1>Local Parallel Hyperparameter Tuner</h1>
++    <p>Your data is processed on <b>your CPU</b> by a local Java agent and is <b>never uploaded</b>.</p>
++
++    <form id="tuningForm">
++        <fieldset>
++            <legend>Job Configuration</legend>
++            <p>
++                <label for="fileInput">1. Select your local CSV data file (must have a header and a 'target' column):</label>
++                <input type="file" id="fileInput" required>
++            </p>
++            <p>
++                <label for="modelInput">2. Select Model:</label>
++                <select id="modelInput">
++                    <option value="random_forest">Random Forest Classifier</option>
++                    <option value="linear_regression">Linear Regression</option>
++                </select>
++            </p>
++            <p>
++                <label for="paramsInput">3. Enter Hyperparameter Grid (JSON format):</label>
++                <textarea id="paramsInput" rows="8" required>{
++"n_estimators": [50, 100],
++"max_depth": [5, 10, 15],
++"max_features": [3, 5, 7]
++}</textarea>
++            </p>
++        </fieldset>
++        <button type="submit" id="submitButton">Start Parallel Grid Search</button>
++    </form>
++
++    <hr style="margin: 2em 0;">
++    <h2>Job Status</h2>
++    <pre id="statusDiv">Waiting to submit job...</pre>
++</div>
++
++<script>
++    const form = document.getElementById('tuningForm');
++    const statusDiv = document.getElementById('statusDiv');
++    const submitButton = document.getElementById('submitButton');
++    let pollingInterval = null;
++
++    form.addEventListener('submit', async (e) => {
++        e.preventDefault();
++        submitButton.disabled = true;
++        statusDiv.textContent = "Submitting job to local agent...";
++        if (pollingInterval) clearInterval(pollingInterval);
++
++        const formData = new FormData();
++        formData.append('file', document.getElementById('fileInput').files[0]);
++        formData.append('model', document.getElementById('modelInput').value);
++        formData.append('paramsJson', document.getElementById('paramsInput').value);
++
++        try {
++            const response = await fetch('/api/tune', { method: 'POST', body: formData });
++            if (!response.ok) throw new Error(`Server error: ${await response.text()}`);
++
++            const data = await response.json();
++            if (data.jobId) {
++                statusDiv.textContent = `Job submitted!\nID: ${data.jobId}\nPolling for updates...`;
++                pollStatus(data.jobId);
++            } else {
++                throw new Error(data.error || "Failed to start job.");
++            }
++
++        } catch (error) {
++            statusDiv.textContent = `Error: ${error.message}`;
++            submitButton.disabled = false;
++        }
++    });
++
++    function pollStatus(jobId) {
++        pollingInterval = setInterval(async () => {
++            try {
++                const response = await fetch(`/api/status/${jobId}`);
++                if (!response.ok) throw new Error("Could not fetch status.");
++
++                const statusData = await response.json();
++                let statusText = `Job ID:    ${jobId}\nStatus:    ${statusData.status}\nMessage:   ${statusData.message}`;
++
++                if (statusData.status === 'COMPLETED' || statusData.status === 'FAILED') {
++                    clearInterval(pollingInterval);
++                    submitButton.disabled = false;
++                    if (statusData.bestParams) {
++                        const isClassification = document.getElementById('modelInput').value === 'random_forest';
++                        const scoreName = isClassification ? "Best F1-Score" : "Best MAE";
++                        const scoreValue = (statusData.bestScore && isClassification) ? (1.0 - statusData.bestScore) : statusData.bestScore;
++
++                        statusText += `\n\n--- BEST RESULT ---`;
++                        if (scoreValue != null) {
++                            statusText += `\n${scoreName}: ${scoreValue.toFixed(4)}`;
++                        }
++                        statusText += `\nParams: ${JSON.stringify(statusData.bestParams, null, 2)}`;
++                    }
++                }
++                statusDiv.textContent = statusText;
++            } catch (error) {
++                statusDiv.textContent += `\nConnection to local agent lost.`;
++                clearInterval(pollingInterval);
++                submitButton.disabled = false;
++            }
++        }, 2500);
++    }
++</script>
++</body>
++</html>
+\ No newline at end of file
+Index: GridThread.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/GridThread.iml b/GridThread.iml
+new file mode 100644
+--- /dev/null	(date 1763087468918)
++++ b/GridThread.iml	(date 1763087468918)
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<module version="4">
++  <component name="AdditionalModuleElements">
++    <content url="file://$MODULE_DIR$" dumb="true">
++      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
++    </content>
++  </component>
++</module>
+\ No newline at end of file
+Index: .idea/modules.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/modules.xml b/.idea/modules.xml
+new file mode 100644
+--- /dev/null	(date 1763087468926)
++++ b/.idea/modules.xml	(date 1763087468926)
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="ProjectModuleManager">
++    <modules>
++      <module fileurl="file://$PROJECT_DIR$/GridThread.iml" filepath="$PROJECT_DIR$/GridThread.iml" />
++    </modules>
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+new file mode 100644
+--- /dev/null	(date 1763087468940)
++++ b/.idea/misc.xml	(date 1763087468940)
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="ExternalStorageConfigurationManager" enabled="true" />
++  <component name="MavenProjectsManager">
++    <option name="originalFiles">
++      <list>
++        <option value="$PROJECT_DIR$/pom.xml" />
++      </list>
++    </option>
++  </component>
++  <component name="ProjectRootManager" version="2" languageLevel="JDK_24" default="true" project-jdk-name="24" project-jdk-type="JavaSDK">
++    <output url="file://$PROJECT_DIR$/out" />
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/compiler.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/compiler.xml b/.idea/compiler.xml
+new file mode 100644
+--- /dev/null	(date 1763087468951)
++++ b/.idea/compiler.xml	(date 1763087468951)
+@@ -0,0 +1,13 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="CompilerConfiguration">
++    <annotationProcessing>
++      <profile name="Maven default annotation processors profile" enabled="true">
++        <sourceOutputDir name="target/generated-sources/annotations" />
++        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
++        <outputRelativeToContentRoot value="true" />
++        <module name="GridThread" />
++      </profile>
++    </annotationProcessing>
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/encodings.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/encodings.xml b/.idea/encodings.xml
+new file mode 100644
+--- /dev/null	(date 1763351909646)
++++ b/.idea/encodings.xml	(date 1763351909646)
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="Encoding">
++    <file url="file://$PROJECT_DIR$/src" charset="UTF-8" />
++    <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
++    <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
++    <file url="file://$PROJECT_DIR$/src/resources" charset="UTF-8" />
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/jarRepositories.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/jarRepositories.xml b/.idea/jarRepositories.xml
+new file mode 100644
+--- /dev/null	(date 1763087468966)
++++ b/.idea/jarRepositories.xml	(date 1763087468966)
+@@ -0,0 +1,20 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="RemoteRepositoriesConfiguration">
++    <remote-repository>
++      <option name="id" value="central" />
++      <option name="name" value="Central Repository" />
++      <option name="url" value="https://repo.maven.apache.org/maven2" />
++    </remote-repository>
++    <remote-repository>
++      <option name="id" value="central" />
++      <option name="name" value="Maven Central repository" />
++      <option name="url" value="https://repo1.maven.org/maven2" />
++    </remote-repository>
++    <remote-repository>
++      <option name="id" value="jboss.community" />
++      <option name="name" value="JBoss Community repository" />
++      <option name="url" value="https://repository.jboss.org/nexus/content/repositories/public/" />
++    </remote-repository>
++  </component>
++</project>
+\ No newline at end of file
+Index: target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst b/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+new file mode 100644
+--- /dev/null	(date 1763409254407)
++++ b/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst	(date 1763409254407)
+@@ -0,0 +1,14 @@
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\agent\JobStatus.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\agent\TunerAgent.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\agent\TuningService.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\app\Main.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\data\CrossValidator.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\data\CSVLoader.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\data\DataSplit.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\mlmodels\MGDRegressor.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\mlmodels\RandomForestSuite.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\tunablemodels\MyTunableMGDRegressor.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\tunablemodels\MyTunableRandomForest.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\tuner\GridSearchTuner.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\tuner\ParamSpace.java
++C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\main\java\com\tunerapp\tuner\TunableModel.java
+Index: .gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+--- /dev/null	(date 1763082819048)
++++ b/.gitignore	(date 1763082819048)
+@@ -0,0 +1,29 @@
++### IntelliJ IDEA ###
++out/
++!**/src/main/**/out/
++!**/src/test/**/out/
++
++### Eclipse ###
++.apt_generated
++.classpath
++.factorypath
++.project
++.settings
++.springBeans
++.sts4-cache
++bin/
++!**/src/main/**/bin/
++!**/src/test/**/bin/
++
++### NetBeans ###
++/nbproject/private/
++/nbbuild/
++/dist/
++/nbdist/
++/.nb-gradle/
++
++### VS Code ###
++.vscode/
++
++### Mac OS ###
++.DS_Store
+\ No newline at end of file
+Index: target/classes/public/index.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/target/classes/public/index.html b/target/classes/public/index.html
+new file mode 100644
+--- /dev/null	(date 1763351156954)
++++ b/target/classes/public/index.html	(date 1763351156954)
+@@ -0,0 +1,126 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <title>Local ML Tuner</title>
++    <style>
++        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; margin: 2em; background-color: #f8f9fa; color: #212529; }
++        #container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
++        fieldset { border: 1px solid #dee2e6; border-radius: 5px; padding: 1.5em; margin-bottom: 1.5em; }
++        legend { font-weight: bold; font-size: 1.2em; padding: 0 0.5em; }
++        pre { background-color: #e9ecef; padding: 1em; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; font-family: "Courier New", Courier, monospace; border: 1px solid #dee2e6;}
++        button { font-size: 1.1em; padding: 0.7em 1.2em; border-radius: 5px; border: none; color: #fff; background-color: #007bff; cursor: pointer; transition: background-color 0.2s; }
++        button:hover { background-color: #0056b3; }
++        button:disabled { background-color: #6c757d; cursor: not-allowed; }
++        h1, h2 { color: #343a40; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
++        label { display: block; margin-bottom: 0.5em; font-weight: 500; }
++        input, select, textarea { width: 100%; padding: 0.5em; border-radius: 4px; border: 1px solid #ced4da; box-sizing: border-box; font-family: inherit; font-size: 1em; }
++        textarea { resize: vertical; }
++    </style>
++</head>
++<body>
++<div id="container">
++    <h1>Local Parallel Hyperparameter Tuner</h1>
++    <p>Your data is processed on <b>your CPU</b> by a local Java agent and is <b>never uploaded</b>.</p>
++
++    <form id="tuningForm">
++        <fieldset>
++            <legend>Job Configuration</legend>
++            <p>
++                <label for="fileInput">1. Select your local CSV data file (must have a header and a 'target' column):</label>
++                <input type="file" id="fileInput" required>
++            </p>
++            <p>
++                <label for="modelInput">2. Select Model:</label>
++                <select id="modelInput">
++                    <option value="random_forest">Random Forest Classifier</option>
++                    <option value="linear_regression">Linear Regression</option>
++                </select>
++            </p>
++            <p>
++                <label for="paramsInput">3. Enter Hyperparameter Grid (JSON format):</label>
++                <textarea id="paramsInput" rows="8" required>{
++"n_estimators": [50, 100],
++"max_depth": [5, 10, 15],
++"max_features": [3, 5, 7]
++}</textarea>
++            </p>
++        </fieldset>
++        <button type="submit" id="submitButton">Start Parallel Grid Search</button>
++    </form>
++
++    <hr style="margin: 2em 0;">
++    <h2>Job Status</h2>
++    <pre id="statusDiv">Waiting to submit job...</pre>
++</div>
++
++<script>
++    const form = document.getElementById('tuningForm');
++    const statusDiv = document.getElementById('statusDiv');
++    const submitButton = document.getElementById('submitButton');
++    let pollingInterval = null;
++
++    form.addEventListener('submit', async (e) => {
++        e.preventDefault();
++        submitButton.disabled = true;
++        statusDiv.textContent = "Submitting job to local agent...";
++        if (pollingInterval) clearInterval(pollingInterval);
++
++        const formData = new FormData();
++        formData.append('file', document.getElementById('fileInput').files[0]);
++        formData.append('model', document.getElementById('modelInput').value);
++        formData.append('paramsJson', document.getElementById('paramsInput').value);
++
++        try {
++            const response = await fetch('/api/tune', { method: 'POST', body: formData });
++            if (!response.ok) throw new Error(`Server error: ${await response.text()}`);
++
++            const data = await response.json();
++            if (data.jobId) {
++                statusDiv.textContent = `Job submitted!\nID: ${data.jobId}\nPolling for updates...`;
++                pollStatus(data.jobId);
++            } else {
++                throw new Error(data.error || "Failed to start job.");
++            }
++
++        } catch (error) {
++            statusDiv.textContent = `Error: ${error.message}`;
++            submitButton.disabled = false;
++        }
++    });
++
++    function pollStatus(jobId) {
++        pollingInterval = setInterval(async () => {
++            try {
++                const response = await fetch(`/api/status/${jobId}`);
++                if (!response.ok) throw new Error("Could not fetch status.");
++
++                const statusData = await response.json();
++                let statusText = `Job ID:    ${jobId}\nStatus:    ${statusData.status}\nMessage:   ${statusData.message}`;
++
++                if (statusData.status === 'COMPLETED' || statusData.status === 'FAILED') {
++                    clearInterval(pollingInterval);
++                    submitButton.disabled = false;
++                    if (statusData.bestParams) {
++                        const isClassification = document.getElementById('modelInput').value === 'random_forest';
++                        const scoreName = isClassification ? "Best F1-Score" : "Best MAE";
++                        const scoreValue = (statusData.bestScore && isClassification) ? (1.0 - statusData.bestScore) : statusData.bestScore;
++
++                        statusText += `\n\n--- BEST RESULT ---`;
++                        if (scoreValue != null) {
++                            statusText += `\n${scoreName}: ${scoreValue.toFixed(4)}`;
++                        }
++                        statusText += `\nParams: ${JSON.stringify(statusData.bestParams, null, 2)}`;
++                    }
++                }
++                statusDiv.textContent = statusText;
++            } catch (error) {
++                statusDiv.textContent += `\nConnection to local agent lost.`;
++                clearInterval(pollingInterval);
++                submitButton.disabled = false;
++            }
++        }, 2500);
++    }
++</script>
++</body>
++</html>
+\ No newline at end of file
+Index: .idea/.gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/.gitignore b/.idea/.gitignore
+new file mode 100644
+--- /dev/null	(date 1763082826961)
++++ b/.idea/.gitignore	(date 1763082826961)
+@@ -0,0 +1,5 @@
++# Default ignored files
++/shelf/
++/workspace.xml
++# Environment-dependent path to Maven home directory
++/mavenHomeManager.xml
+Index: .idea/inspectionProfiles/Project_Default.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/inspectionProfiles/Project_Default.xml b/.idea/inspectionProfiles/Project_Default.xml
+new file mode 100644
+--- /dev/null	(date 1763432675265)
++++ b/.idea/inspectionProfiles/Project_Default.xml	(date 1763432675265)
+@@ -0,0 +1,8 @@
++<component name="InspectionProjectProfileManager">
++  <profile version="1.0">
++    <option name="myName" value="Project Default" />
++    <inspection_tool class="AutoCloseableResource" enabled="true" level="WARNING" enabled_by_default="true">
++      <option name="METHOD_MATCHER_CONFIG" value="java.util.Formatter,format,java.io.Writer,append,com.google.common.base.Preconditions,checkNotNull,org.hibernate.Session,close,java.io.PrintWriter,printf,java.io.PrintStream,printf,java.lang.foreign.Arena,ofAuto,java.lang.foreign.Arena,global,io.javalin.Javalin,create,java.util.concurrent.Executors,newFixedThreadPool" />
++    </inspection_tool>
++  </profile>
++</component>
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/agent/JobStatus.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/agent/JobStatus.java b/src/main/java/com/tunerapp/agent/JobStatus.java
+new file mode 100644
+--- /dev/null	(date 1763352878033)
++++ b/src/main/java/com/tunerapp/agent/JobStatus.java	(date 1763352878033)
+@@ -0,0 +1,19 @@
++package main.java.com.tunerapp.agent;
++
++import java.util.Map;
++
++// This is just a simple class to hold the state of a job
++public class JobStatus {
++    public String jobId;
++    public String status; // e.g., "QUEUED", "RUNNING", "COMPLETED", "FAILED"
++    public String message;
++    public Map<String, Object> bestParams;
++    public Double bestScore;
++
++    public JobStatus(String jobId, String status, String message) {
++        this.jobId = jobId;
++        this.status = status;
++        this.message = message;
++    }
++    // Getters and setters would be good practice here, but public fields are fine for now.
++}
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/agent/TuningService.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/agent/TuningService.java b/src/main/java/com/tunerapp/agent/TuningService.java
+new file mode 100644
+--- /dev/null	(date 1763408086495)
++++ b/src/main/java/com/tunerapp/agent/TuningService.java	(date 1763408086495)
+@@ -0,0 +1,84 @@
++// File: TuningService.java (Corrected with isClassification parameter)
++package main.java.com.tunerapp.agent;
++
++import main.java.com.tunerapp.data.CSVLoader;
++import main.java.com.tunerapp.data.CrossValidator;
++import main.java.com.tunerapp.data.DataSplit;
++import main.java.com.tunerapp.tunablemodels.MyTunableMGDRegressor;
++import main.java.com.tunerapp.tunablemodels.MyTunableRandomForest;
++import main.java.com.tunerapp.tuner.GridSearchTuner;
++import main.java.com.tunerapp.tuner.ParamSpace;
++import main.java.com.tunerapp.tuner.TunableModel;
++
++import java.io.InputStream;
++import java.io.InputStreamReader;
++import java.util.List;
++import java.util.Map;
++import java.util.UUID;
++import java.util.concurrent.*;
++
++public class TuningService {
++
++    private final Map<String, JobStatus> jobStatuses = new ConcurrentHashMap<>();
++    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
++
++    // --- THIS IS THE CORRECTED METHOD SIGNATURE ---
++    public String startNewTuningJob(InputStream dataStream, String modelName, ParamSpace space, boolean isClassification) {
++        String jobId = UUID.randomUUID().toString();
++        jobStatuses.put(jobId, new JobStatus(jobId, "QUEUED", "Job is waiting in the queue."));
++
++        Runnable tuningTask = () -> {
++            JobStatus currentJobStatus = jobStatuses.get(jobId);
++            try {
++                currentJobStatus.status = "PREPARING_DATA";
++                currentJobStatus.message = "Loading and splitting data...";
++
++                // --- NOW THIS USES THE isClassification PARAMETER ---
++                CSVLoader.Dataset dataset = CSVLoader.load(new InputStreamReader(dataStream), "target", isClassification);
++
++                DataSplit holdoutSplitter = new DataSplit(0.20, 42);
++                List<Object> splits = holdoutSplitter.train_test_split(dataset.X, dataset.y);
++
++                double[][] X_train_for_tuning = (double[][]) splits.get(0);
++                Object y_train_for_tuning_obj = splits.get(2); // Keep as Object for now
++                int n_samples = X_train_for_tuning.length;
++
++                currentJobStatus.status = "RUNNING";
++                currentJobStatus.message = "Tuning process has started. This may take a while...";
++
++                // --- NOW THIS LOGIC USES THE isClassification PARAMETER ---
++                TunableModel model;
++                if (isClassification) {
++                    model = new MyTunableRandomForest();
++                } else {
++                    model = new MyTunableMGDRegressor();
++                }
++
++                int k_folds = 5;
++                CrossValidator cv = new CrossValidator(n_samples, k_folds, 42);
++
++                // We can now safely create the tuner with the right model
++                GridSearchTuner tuner = new GridSearchTuner<>(model, space);
++                GridSearchTuner.TuningResult result = tuner.tune(X_train_for_tuning, y_train_for_tuning_obj, cv);
++
++                // --- COMPLETION (No change here) ---
++                currentJobStatus.status = "COMPLETED";
++                currentJobStatus.message = "Tuning finished successfully!";
++                currentJobStatus.bestParams = result.bestParams;
++                currentJobStatus.bestScore = result.bestScore;
++
++            } catch (Exception e) {
++                currentJobStatus.status = "FAILED";
++                currentJobStatus.message = "An error occurred: " + e.getMessage();
++                e.printStackTrace();
++            }
++        };
++
++        executor.submit(tuningTask);
++        return jobId;
++    }
++
++    public JobStatus getJobStatus(String jobId) {
++        return jobStatuses.get(jobId);
++    }
++}
+\ No newline at end of file
+Index: src/main/java/com/tunerapp/agent/TunerAgent.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/tunerapp/agent/TunerAgent.java b/src/main/java/com/tunerapp/agent/TunerAgent.java
+new file mode 100644
+--- /dev/null	(date 1763407918927)
++++ b/src/main/java/com/tunerapp/agent/TunerAgent.java	(date 1763407918927)
+@@ -0,0 +1,72 @@
++// File: TunerAgent.java (Simplified and Corrected)
++package main.java.com.tunerapp.agent;
++
++import com.google.gson.Gson;
++import com.google.gson.reflect.TypeToken;
++import main.java.com.tunerapp.tuner.ParamSpace;
++import io.javalin.Javalin;
++import io.javalin.http.staticfiles.Location;
++
++import java.lang.reflect.Type;
++import java.util.List;
++import java.util.Map;
++import java.util.stream.Collectors;
++
++public class TunerAgent {
++
++    public static void main(String[] args) {
++        TuningService tuningService = new TuningService();
++        Gson gson = new Gson();
++
++        Javalin app = Javalin.create(config -> {
++            config.staticFiles.add(staticFiles -> {
++                staticFiles.directory = "/public";
++                staticFiles.location = Location.CLASSPATH;
++            });
++        }).start(8080);
++
++        System.out.println("Tuner Agent is running. Open http://localhost:8080");
++
++        app.post("/api/tune", ctx -> {
++
++            // --- THIS IS THE NEW, SIMPLIFIED JSON PARSING LOGIC ---
++            ParamSpace space = new ParamSpace();
++            try {
++                // Gson can have trouble with mixed int/double lists. Reading all numbers as Doubles is safer.
++                Type type = new TypeToken<Map<String, List<Double>>>() {}.getType();
++                Map<String, List<Double>> rawMap = gson.fromJson(ctx.formParam("paramsJson"), type);
++
++                // No casting is needed here! The flexible ParamSpace.add handles it.
++                for (Map.Entry<String, List<Double>> entry : rawMap.entrySet()) {
++                    space.add(entry.getKey(), entry.getValue());
++                }
++
++            } catch (Exception e) {
++                ctx.status(400).json(Map.of("error", "Invalid JSON. Ensure all values in parameter lists are numbers.", "details", e.getMessage()));
++                return;
++            }
++
++            String modelName = ctx.formParam("model");
++            boolean isClassification = "random_forest".equals(modelName);
++
++            String jobId = tuningService.startNewTuningJob(
++                    ctx.uploadedFile("file").content(),
++                    modelName,
++                    space,
++                    isClassification
++            );
++
++            ctx.json(Map.of("jobId", jobId));
++        });
++
++        // The status endpoint remains the same.
++        app.get("/api/status/{jobId}", ctx -> {
++            JobStatus status = tuningService.getJobStatus(ctx.pathParam("jobId"));
++            if (status != null) {
++                ctx.json(status);
++            } else {
++                ctx.status(404);
++            }
++        });
++    }
++}
+\ No newline at end of file
+diff --git a/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst b/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
+new file mode 100644

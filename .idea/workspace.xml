@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2d6df250-91ad-41b8-a379-82afa7540368" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/CSVLoader$Dataset.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/CSVLoader.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/CrossValidator$Fold.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/CrossValidator.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/DataSplit.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/GridSearchTuner$TrialResult.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/GridSearchTuner$TuningResult.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/GridSearchTuner.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/JobStatus.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/MGDRegressor.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/Main.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/MyTunableMGDRegressor.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/MyTunableRandomForest.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/ParamSpace.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/RandomForestSuite$DecisionTree$Node.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/RandomForestSuite$DecisionTree$Split.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/RandomForestSuite$DecisionTree.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/RandomForestSuite$ModelMetrics.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/RandomForestSuite$RandomForest$BootstrapSample.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/RandomForestSuite$RandomForest.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/RandomForestSuite.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/TunableModel.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/TunerAgent$1.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/TunerAgent.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/TuningService.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/shelved.patch" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/tuner-agent-1.0-SNAPSHOT-jar-with-dependencies.jar" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Changes/tuner-agent-1.0-SNAPSHOT.jar" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/target/tuner-agent-1.0-SNAPSHOT-jar-with-dependencies.jar" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/talal00777/HyperParameterTuning",
+    "accountId": "0150b5ee-672d-44f8-81f4-8764f44dc295"
+  }
+}]]></component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 3
+}]]></component>
+  <component name="ProjectId" id="35RpcfPPlc45EjK8beuHhDA9PzO" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.Main.executor": "Run",
+    "Maven.tuner-agent [package].executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
+    "git-widget-placeholder": "master",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "MavenSettings"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\World\Desktop\Monotonic Search Algorithm\GridThread\src\resources\public" />
+    </key>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2d6df250-91ad-41b8-a379-82afa7540368" name="Changes" comment="" />
+      <created>1763082821796</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1763082821796</updated>
+    </task>
+    <servers />
+  </component>
+</project>
