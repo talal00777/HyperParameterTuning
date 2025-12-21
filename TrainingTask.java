@@ -19,16 +19,15 @@ class TrainingTask implements Callable<JobResult> {
 
     @Override
     public JobResult call() {
-        System.out.println(Thread.currentThread().getName() + ": Starting job with " + "LR=" + learningRate + ", Epochs=" + epochs);
+
+        int num_features = X_test[0].length;
+        System.out.println(Thread.currentThread().getName() + ": Starting job with " + "LR = " + learningRate + ", Epochs = " + epochs);
         MGDRegressor mgd = new MGDRegressor(epochs,learningRate);
         mgd.train(X_train, y_train);
 
         double[] y_pred = mgd.predict(X_test);
-        // This now calls the method that calculates real MSE
-        int num_features = X_test[0].length;
         double adj_r2 = MGDRegressor.adjusted_r2(y_test, y_pred,num_features);
-
-        System.out.println(Thread.currentThread().getName() + ": Finished job with " + "LR=" + learningRate + ", ADJ_R2 = " + String.format("%.4f", adj_r2));
-        return new JobResult(adj_r2, mgd.getParams());
+        System.out.println(Thread.currentThread().getName() + ": Finished job with " + "LR = " + learningRate + "Epochs = " + epochs + ", ADJ_R2 = " + String.format("%.4f", adj_r2));
+        return new JobResult(adj_r2, mgd.getParams(),mgd.getEpochs());
     }
 }

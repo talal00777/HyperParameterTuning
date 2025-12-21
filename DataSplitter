@@ -1,0 +1,43 @@
+package javaml;
+
+import java.util.*;
+
+public class DataSplitter {
+    double new_data_size;
+    int random_state;
+
+    public DataSplitter(double new_data_size, int random_state) {
+        this.new_data_size = new_data_size;
+        this.random_state = random_state;
+    }
+
+    public List<Object> new_data_split(double[][] X, double[] y) {
+        Random random = new Random(this.random_state);
+        int n = X.length;
+        
+        Integer[] indices = new Integer[n];
+        for (int i = 0; i < n; i++) {
+            indices[i] = i;
+        }
+
+        List<Integer> indicesList = Arrays.asList(indices);
+        Collections.shuffle(indicesList, random);
+        indicesList.toArray(indices);
+        
+        int num_test_samples = (int) Math.round(new_data_size * n);
+        Integer[] new_data_indices = Arrays.copyOfRange(indices, 0, num_test_samples);
+        
+        List<double[]> new_X = new ArrayList<>();
+        List<Double> new_y = new ArrayList<>();
+        
+        for (int idx : new_data_indices) {
+            new_X.add(X[idx]);
+            new_y.add(y[idx]);
+        }
+        
+        double[][] new_X_arr = new_X.toArray(new double[new_X.size()][]);
+        double[] new_y_arr = new_y.stream().mapToDouble(Double::doubleValue).toArray();
+
+        return List.of(new_X_arr,new_y_arr);
+    }
+}

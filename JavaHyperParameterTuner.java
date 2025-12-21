@@ -12,7 +12,25 @@ public class JavaHyperParameterTuner
 {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         // --- 0. Create dummy data ---
-        RegressionData data = makeRegression(1000000, 5, 30, 13);
+        RegressionData data = makeRegression(100000, 10, 30, 13);
+
+        //Splitting the subset of original Data into small subset....
+        DataSplitter new_data = new DataSplitter(0.65,4);
+        List<Object> new_split = new_data.new_data_split(data.X, data.y);
+
+        double[][] new_X = (double[][]) new_split.get(0);
+        double[] new_y = (double[]) new_split.get(1);
+
+        //Splitting the subset of original Data into training and testing data....
+        DataSplit new_data_split = new DataSplit(0.2,3);
+        List<Object> new_splits = new_data_split.train_test_split(new_X,new_y);
+
+        double[][] new_X_train = (double[][]) new_splits.get(0);
+        double[][] new_X_test = (double[][]) new_splits.get(1);
+        double[] new_y_train = (double[]) new_splits.get(2);
+        double[] new_y_test = (double[]) new_splits.get(3);
+
+        //Splitting the Original DataSet into training and testing data....
         DataSplit ds = new DataSplit(0.2,3);
         List<Object> splits = ds.train_test_split(data.X, data.y);
 
@@ -22,8 +40,8 @@ public class JavaHyperParameterTuner
         double[] y_test = (double[]) splits.get(3);
 
         // --- 1. Define the hyperparameter search space ---
-        int[] epochOptions = {50, 100, 200,300,250};
-        double[] lrOptions = {0.1, 0.01, 0.001,0.0001,0.00001};
+        int[] epochOptions = {250,200,50,100,500};
+        double[] lrOptions = {0.1,0.001,0.00001,0.0001};
         int numParallelJobs = 4;
 
         // --- 2. Create the list of all tasks to be run ---
@@ -49,7 +67,7 @@ public class JavaHyperParameterTuner
         JobResult bestResult = null;
         for (Future<JobResult> future : allFutures) {
             JobResult currentResult = future.get();
-            if (bestResult == null || currentResult.getScore() < bestResult.getScore()) {
+            if (bestResult == null || (currentResult.getScore() < bestResult.getScore()) || ((currentResult.getEpochs() < bestResult.getEpochs() && currentResult.getScore() == bestResult.getScore()))) {
                 bestResult = currentResult;
             }
         }
@@ -57,7 +75,7 @@ public class JavaHyperParameterTuner
         // --- 5. Report the best result and shut down the runner ---
         System.out.println("\n----------------- Tuning Complete -----------------");
         if (bestResult != null) {
-            System.out.println("Best (Lowest) MSE: " + String.format("%.4f", bestResult.getScore()));
+            System.out.println("Best (Lowest) ADJ_R2: " + String.format("%.4f", bestResult.getScore()));
             System.out.println("Found with Hyperparameters: " + bestResult.getParams());
         }
         System.out.println("Total time taken: " + (endTime - startTime) + " ms");
