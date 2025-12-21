@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Local ML Tuner</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; margin: 2em; background-color: #f8f9fa; color: #212529; }
+        #container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        fieldset { border: 1px solid #dee2e6; border-radius: 5px; padding: 1.5em; margin-bottom: 1.5em; }
+        legend { font-weight: bold; font-size: 1.2em; padding: 0 0.5em; }
+        pre { background-color: #e9ecef; padding: 1em; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; font-family: "Courier New", Courier, monospace; border: 1px solid #dee2e6;}
+        button { font-size: 1.1em; padding: 0.7em 1.2em; border-radius: 5px; border: none; color: #fff; background-color: #007bff; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        h1, h2 { color: #343a40; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
+        label { display: block; margin-bottom: 0.5em; font-weight: 500; }
+        input, select, textarea { width: 100%; padding: 0.5em; border-radius: 4px; border: 1px solid #ced4da; box-sizing: border-box; font-family: inherit; font-size: 1em; }
+        textarea { resize: vertical; }
+    </style>
+</head>
+<body>
+<div id="container">
+    <h1>Local Parallel Hyperparameter Tuner</h1>
+    <p>Your data is processed on <b>your CPU</b> by a local Java agent and is <b>never uploaded</b>.</p>
+
+    <form id="tuningForm">
+        <fieldset>
+            <legend>Job Configuration</legend>
+            <p>
+                <label for="fileInput">1. Select your local CSV data file (must have a header and a 'target' column):</label>
+                <input type="file" id="fileInput" required>
+            </p>
+            <p>
+                <label for="modelInput">2. Select Model:</label>
+                <select id="modelInput">
+                    <option value="random_forest">Random Forest Classifier</option>
+                    <option value="linear_regression">Linear Regression</option>
+                </select>
+            </p>
+            <p>
+                <label for="paramsInput">3. Enter Hyperparameter Grid (JSON format):</label>
+                <textarea id="paramsInput" rows="8" required>{
+"n_estimators": [50, 100],
+"max_depth": [5, 10, 15],
+"max_features": [3, 5, 7]
+}</textarea>
+            </p>
+        </fieldset>
+        <button type="submit" id="submitButton">Start Parallel Grid Search</button>
+    </form>
+
+    <hr style="margin: 2em 0;">
+    <h2>Job Status</h2>
+    <pre id="statusDiv">Waiting to submit job...</pre>
+</div>
+
+<script>
+    const form = document.getElementById('tuningForm');
+    const statusDiv = document.getElementById('statusDiv');
+    const submitButton = document.getElementById('submitButton');
+    let pollingInterval = null;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        submitButton.disabled = true;
+        statusDiv.textContent = "Submitting job to local agent...";
+        if (pollingInterval) clearInterval(pollingInterval);
+
+        const formData = new FormData();
+        formData.append('file', document.getElementById('fileInput').files[0]);
+        formData.append('model', document.getElementById('modelInput').value);
+        formData.append('paramsJson', document.getElementById('paramsInput').value);
+
+        try {
+            const response = await fetch('/api/tune', { method: 'POST', body: formData });
+            if (!response.ok) throw new Error(`Server error: ${await response.text()}`);
+
+            const data = await response.json();
+            if (data.jobId) {
+                statusDiv.textContent = `Job submitted!\nID: ${data.jobId}\nPolling for updates...`;
+                pollStatus(data.jobId);
+            } else {
+                throw new Error(data.error || "Failed to start job.");
+            }
+
+        } catch (error) {
+            statusDiv.textContent = `Error: ${error.message}`;
+            submitButton.disabled = false;
+        }
+    });
+
+    function pollStatus(jobId) {
+        pollingInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/status/${jobId}`);
+                if (!response.ok) throw new Error("Could not fetch status.");
+
+                const statusData = await response.json();
+                let statusText = `Job ID:    ${jobId}\nStatus:    ${statusData.status}\nMessage:   ${statusData.message}`;
+
+                if (statusData.status === 'COMPLETED' || statusData.status === 'FAILED') {
+                    clearInterval(pollingInterval);
+                    submitButton.disabled = false;
+                    if (statusData.bestParams) {
+                        const isClassification = document.getElementById('modelInput').value === 'random_forest';
+                        const scoreName = isClassification ? "Best F1-Score" : "Best MAE";
+                        const scoreValue = (statusData.bestScore && isClassification) ? (1.0 - statusData.bestScore) : statusData.bestScore;
+
+                        statusText += `\n\n--- BEST RESULT ---`;
+                        if (scoreValue != null) {
+                            statusText += `\n${scoreName}: ${scoreValue.toFixed(4)}`;
+                        }
+                        statusText += `\nParams: ${JSON.stringify(statusData.bestParams, null, 2)}`;
+                    }
+                }
+                statusDiv.textContent = statusText;
+            } catch (error) {
+                statusDiv.textContent += `\nConnection to local agent lost.`;
+                clearInterval(pollingInterval);
+                submitButton.disabled = false;
+            }
+        }, 2500);
+    }
+</script>
+</body>
+</html>

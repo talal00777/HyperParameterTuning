@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Define your project's coordinates -->
+    <groupId>com.tunerapp</groupId>
+    <artifactId>tuner-agent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <!-- Set Java version -->
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!-- Define all external libraries your project needs -->
+    <dependencies>
+        <!-- For the lightweight embedded web server -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin</artifactId>
+            <version>5.6.3</version> <!-- I've updated this to a newer stable version -->
+        </dependency>
+        <!-- Required logging backend for Javalin -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.5</version> <!-- I've updated this to a newer stable version -->
+        </dependency>
+
+        <!-- For parsing JSON from the front-end -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version> <!-- I've updated this to a newer stable version -->
+        </dependency>
+
+        <!-- For parsing CSV data -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.9.0</version>
+        </dependency>
+
+        <!-- This is the library Javalin uses to convert Java objects to JSON -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.15.2</version> <!-- A recent, stable version -->
+        </dependency>
+
+    </dependencies>
+
+    <!-- ==================================================================== -->
+    <!-- === THIS IS THE CRITICAL SECTION THAT NEEDS TO BE ADDED/MODIFIED === -->
+    <!-- ==================================================================== -->
+    <build>
+        <!-- This tells Maven your Java code is in `src` not `src/main/java` -->
+        <sourceDirectory>src</sourceDirectory>
+
+        <resources>
+            <!-- This tells Maven your resource files are in `src/resources` -->
+            <resource>
+                <directory>src/resources</directory>
+            </resource>
+        </resources>
+
+        <plugins>
+            <!-- Plugin to create a single "fat JAR" with all dependencies -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>main.java.com.tunerapp.agent.TunerAgent</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
